@@ -50,7 +50,7 @@
 //        -----------------------------------------------------------------------------------------------------------------
 
                  &mkp LCLK                                                                                          &mkp RCLK
-    &kp CLCK                &mt LGUI C_MEDIA_HOME               &mkp LCLK                          &mt DEL K_BACK DEL                &kp ESC
+    &kp CLCK                &kp LGUI                            &mkp LCLK                          &mt ESC K_BACK                    &kp TAB
     &kp Q        &kp W      &kp E       &kp R     &kp T         &kp Y             &kp U            &kp I            &kp O            &kp P
     &kp A        &kp S      &kp D       &kp F     &kp G         &kp H             &kp J            &kp K            &kp L            &kp BSPC
     &kp LSHFT    &kp Z      &kp X       &kp C     &kp V         &kp B             &kp N            &kp M            &kp SEMI         &kp ENTER
