@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZMK Keymap Editor — BlackBerry 9900 (bb9900)</title>
+<style>
+  :root{
+    --bg:#0f1117; --panel:#171a23; --panel2:#1e222d; --edge:#2a2f3d;
+    --cap:#2b3140; --cap-hi:#3a4152; --text:#e6e9ef; --muted:#8b93a7;
+    --accent:#3d7dff; --accent2:#1f4bb8; --warn:#ffcc66;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font:14px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  header{
+    display:flex; align-items:center; gap:16px; padding:12px 18px;
+    background:var(--panel); border-bottom:1px solid var(--edge);
+    position:sticky; top:0; z-index:5;
+  }
+  header h1{font-size:16px; margin:0; font-weight:600; letter-spacing:.2px}
+  header .sub{color:var(--muted); font-size:12px}
+  .spacer{flex:1}
+  .btn{
+    background:var(--cap); color:var(--text); border:1px solid var(--edge);
+    padding:7px 12px; border-radius:7px; cursor:pointer; font-size:13px;
+  }
+  .btn:hover{background:var(--cap-hi)}
+  .btn.primary{background:var(--accent); border-color:var(--accent2)}
+  .btn.primary:hover{background:#4a86ff}
+  main{max-width:1100px; margin:0 auto; padding:18px}
+
+  /* Layer tabs */
+  .layertabs{display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap}
+  .layertab{
+    padding:8px 16px; border-radius:8px 8px 0 0; background:var(--panel2);
+    border:1px solid var(--edge); border-bottom:none; cursor:pointer; color:var(--muted);
+  }
+  .layertab.active{background:var(--accent); color:#fff; border-color:var(--accent2)}
+
+  /* Board */
+  .board-wrap{background:var(--panel); border:1px solid var(--edge); border-radius:12px; padding:22px; margin-bottom:18px}
+  .board{
+    display:grid; grid-template-columns:repeat(10, 1fr); gap:7px;
+    max-width:640px; margin:0 auto;
+  }
+  .cap{
+    position:relative; min-height:52px; border-radius:8px; background:var(--cap);
+    border:1px solid var(--edge); cursor:pointer; display:flex; align-items:center;
+    justify-content:center; text-align:center; padding:4px; user-select:none;
+    transition:background .08s, border-color .08s;
+  }
+  .cap:hover{background:var(--cap-hi)}
+  .cap.sel{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent) inset; background:#26314a}
+  .cap .main{font-size:13px; font-weight:600; word-break:break-word; line-height:1.15}
+  .cap .sub{position:absolute; top:3px; left:5px; font-size:9px; color:var(--warn); font-weight:700}
+  .cap .idx{position:absolute; bottom:2px; right:4px; font-size:8px; color:#4b5468}
+
+  /* Detail panel */
+  .detail{background:var(--panel2); border:1px solid var(--edge); border-radius:10px; padding:12px 14px; margin-bottom:18px; display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+  .detail .lbl{color:var(--muted); font-size:12px}
+  .detail code{background:var(--cap); padding:3px 8px; border-radius:6px; color:var(--warn)}
+  .detail input.raw{background:var(--bg); border:1px solid var(--edge); color:var(--text); padding:6px 10px; border-radius:6px; min-width:220px; font-family:ui-monospace,Consolas,monospace}
+
+  /* Palette */
+  .pal{background:var(--panel); border:1px solid var(--edge); border-radius:12px; padding:14px}
+  .cattabs{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px}
+  .cattab{padding:6px 12px; border-radius:7px; background:var(--panel2); border:1px solid var(--edge); cursor:pointer; color:var(--muted); font-size:12px}
+  .cattab.active{background:var(--cap-hi); color:var(--text)}
+  .palgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(72px,1fr)); gap:7px}
+  .pk{
+    min-height:46px; border-radius:7px; background:var(--cap); border:1px solid var(--edge);
+    cursor:pointer; display:flex; align-items:center; justify-content:center; text-align:center;
+    padding:4px; font-size:12px; position:relative;
+  }
+  .pk:hover{background:var(--accent); border-color:var(--accent2)}
+  .pk .code{position:absolute; bottom:2px; right:4px; font-size:8px; color:#5a6479}
+  .pk.beh{background:#233043; border-color:#33465f}
+  .pk.beh:hover{background:var(--accent)}
+
+  /* Palette tools (search + quick actions) */
+  .paltools{display:flex; gap:8px; align-items:center; margin-bottom:12px; flex-wrap:wrap}
+  .searchbox{flex:1; min-width:180px; position:relative}
+  .searchbox input{width:100%; background:var(--bg); color:var(--text); border:1px solid var(--edge); padding:8px 30px 8px 12px; border-radius:7px; font-size:13px}
+  .searchbox .clear{position:absolute; right:8px; top:50%; transform:translateY(-50%); color:var(--muted); cursor:pointer; font-size:16px; line-height:1; display:none}
+  .searchbox .clear.show{display:block}
+  .quickbtn{padding:7px 12px; border-radius:7px; border:1px solid var(--edge); cursor:pointer; font-size:12px; background:var(--panel2); color:var(--text)}
+  .quickbtn:hover{background:var(--cap-hi)}
+  .quickbtn.none{border-color:#5a3a3a}
+  .quickbtn.none:hover{background:#5a3a3a}
+  .palempty{color:var(--muted); font-size:13px; padding:14px 4px}
+
+  /* Copy/paste buffer + drag states */
+  .detail .buf{color:var(--muted); font-size:12px}
+  .detail .buf code{color:var(--accent)}
+  .cap[draggable=true]{cursor:grab}
+  .cap.dragging{opacity:.4}
+  .cap.dragover{border-color:var(--warn); box-shadow:0 0 0 2px var(--warn) inset}
+
+  /* Modal */
+  .modal-bg{position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; z-index:20}
+  .modal-bg.show{display:flex}
+  .modal{background:var(--panel); border:1px solid var(--edge); border-radius:12px; padding:20px; min-width:340px; max-width:440px}
+  .modal h3{margin:0 0 14px}
+  .modal .field{margin-bottom:12px}
+  .modal .field label{display:block; color:var(--muted); font-size:12px; margin-bottom:5px}
+  .modal select{width:100%; background:var(--bg); color:var(--text); border:1px solid var(--edge); padding:8px; border-radius:6px}
+  .modal .actions{display:flex; justify-content:flex-end; gap:8px; margin-top:16px}
+
+  /* Import / Export areas */
+  .io{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:22px}
+  .io .box{background:var(--panel); border:1px solid var(--edge); border-radius:12px; padding:14px}
+  .io h3{margin:0 0 10px; font-size:14px}
+  textarea{width:100%; min-height:200px; background:var(--bg); color:var(--text); border:1px solid var(--edge); border-radius:8px; padding:10px; font-family:ui-monospace,Consolas,monospace; font-size:12px; resize:vertical}
+  .row{display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap}
+  input[type=file]{color:var(--muted); font-size:12px}
+  .toast{position:fixed; bottom:22px; left:50%; transform:translateX(-50%); background:var(--accent); color:#fff; padding:10px 18px; border-radius:8px; opacity:0; transition:opacity .2s; pointer-events:none; z-index:30}
+  .toast.show{opacity:1}
+  @media(max-width:760px){ .io{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>ZMK Keymap Editor</h1>
+    <div class="sub">BlackBerry 9900 · bb9900.keymap</div>
+  </div>
+  <div class="spacer"></div>
+  <button class="btn" id="reloadDefault">Load default keymap</button>
+  <button class="btn primary" id="downloadBtn">Download .keymap</button>
+  <button class="btn" id="copyBtn">Copy</button>
+</header>
+
+<main>
+  <div class="layertabs" id="layertabs"></div>
+
+  <div class="board-wrap">
+    <div class="board" id="board"></div>
+  </div>
+
+  <div class="detail" id="detail">
+    <span class="lbl">Selected:</span> <span id="selInfo">none — click a key</span>
+    <span class="lbl">Binding:</span> <code id="selBinding">—</code>
+    <button class="btn" id="copyKeyBtn" title="Copy this key's binding to the clipboard buffer">Copy key</button>
+    <button class="btn" id="pasteKeyBtn" title="Paste the copied binding onto the selected key">Paste key</button>
+    <span class="buf" id="bufInfo"></span>
+    <div class="spacer"></div>
+    <span class="lbl">Raw:</span>
+    <input class="raw" id="rawInput" placeholder="&kp A  /  &mt LSHFT A  /  &hm OUT_TOG SPACE" />
+    <button class="btn" id="rawApply">Apply</button>
+  </div>
+
+  <div class="pal">
+    <div class="paltools">
+      <div class="searchbox">
+        <input id="searchInput" type="text" placeholder="Search keys &amp; functions (name or code)…" autocomplete="off">
+        <span class="clear" id="searchClear" title="Clear search">✕</span>
+      </div>
+      <button class="quickbtn none" id="quickNone" title="Assign &none — disables this key on this layer">None ✕</button>
+      <button class="quickbtn" id="quickTrans" title="Assign &trans — falls through to the key on a lower layer">Transparent ▽</button>
+    </div>
+    <div class="cattabs" id="cattabs"></div>
+    <div class="palgrid" id="palgrid"></div>
+  </div>
+
+  <div class="io">
+    <div class="box">
+      <h3>Import</h3>
+      <div class="row">
+        <input type="file" id="fileInput" accept=".keymap,.dtsi,.overlay,text/plain">
+      </div>
+      <textarea id="importArea" placeholder="…or paste your .keymap contents here"></textarea>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" id="loadPasteBtn">Load from paste</button>
+      </div>
+    </div>
+    <div class="box">
+      <h3>Export preview</h3>
+      <textarea id="exportArea" readonly></textarea>
+    </div>
+  </div>
+</main>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal" id="modal">
+    <h3 id="modalTitle">Configure</h3>
+    <div id="modalFields"></div>
+    <div class="actions">
+      <button class="btn" id="modalCancel">Cancel</button>
+      <button class="btn primary" id="modalApply">Apply</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="confirmBg">
+  <div class="modal">
+    <h3 id="confirmTitle">Confirm</h3>
+    <div id="confirmBody" style="color:var(--muted); line-height:1.6"></div>
+    <div class="actions">
+      <button class="btn" id="confirmCancel">Cancel</button>
+      <button class="btn primary" id="confirmOk">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   Default keymap (ZitaoTech bb9900) — used as the built-in sample
+   ============================================================ */
+const DEFAULT_KEYMAP = `/*
+ * Copyright (c) 2023 ZitaoTech
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+#include <behaviors.dtsi>
+#include <dt-bindings/zmk/keys.h>
+#include <dt-bindings/zmk/bt.h>
+#include <dt-bindings/zmk/outputs.h>
+#include <dt-bindings/zmk/mouse.h>
+#include <dt-bindings/zmk/backlight.h>
+#include <dt-bindings/zmk/ext_power.h>
+
+#define SYM 1
+#define UPPER 2
+
+/ {
+    behaviors {
+        td0: tap_dance_0 {
+            compatible = "zmk,behavior-tap-dance";
+            #binding-cells = <0>;
+            tapping-term-ms = <400>;
+            bindings = <&mkp LCLK>, <&bt BT_CLR>;
+        };
+    };
+    behaviors {
+        hm: homerow_mods {
+            compatible = "zmk,behavior-hold-tap";
+            #binding-cells = <2>;
+            tapping-term-ms = <500>;
+            bindings = <&out &kp>;
+        };
+    };
+
+    keymap {
+        compatible = "zmk,keymap";
+
+        default_layer {
+            bindings = <
+                 &mkp LCLK                                                                                          &mkp RCLK
+    &kp CLCK                &kp LGUI                            &mkp LCLK                          &mt ESC K_BACK                    &kp TAB
+    &kp Q        &kp W      &kp E       &kp R     &kp T         &kp Y             &kp U            &kp I            &kp O            &kp P
+    &kp A        &kp S      &kp D       &kp F     &kp G         &kp H             &kp J            &kp K            &kp L            &kp BSPC
+    &kp LSHFT    &kp Z      &kp X       &kp C     &kp V         &kp B             &kp N            &kp M            &kp SEMI         &kp ENTER
+    &kp LCTRL               &kp LALT                            &kp SPACE                          &tog SYM                          &tog UPPER
+            >;
+        };
+
+        sym_layer {
+            bindings = <
+                 &kp C_VOL_UP                                                                                       &kp C_VOL_DN
+    &kp PSCRN               &kp C_AC_SEARCH                     &mkp LCLK                          &kp F5                            &kp F12
+    &kp HASH     &kp N1     &kp N2      &kp N3    &mt LBKT LPAR &mt RBKT RPAR     &kp UNDER        &kp MINUS        &kp PLUS         &kp AT
+    &kp STAR     &kp N4     &kp N5      &kp N6    &kp SLASH     &kp COLON         &kp SEMI         &kp APOS         &kp DQT          &kp DEL
+    &kp LSHFT    &kp N7     &kp N8      &kp N9    &kp QMARK     &kp EXCL          &kp COMMA        &kp DOT          &kp C_MUTE       &kp ENTER
+    &kp LCTRL               &kp N0                              &kp SPACE                          &tog SYM                          &tog UPPER
+            >;
+        };
+
+        upper_layer {
+            bindings = <
+                 &msc SCRL_UP                                                                                       &msc SCRL_DOWN
+    &bt BT_SEL 0            &bt BT_SEL 1                             &td0                           &bt BT_SEL 2                     &bt BT_SEL 3
+    &none        &kp UP     &none       &sys_reset &ext_power EP_TOG &none         &kp LT           &kp GT          &kp PIPE         &kp KP_EQUAL
+    &kp LEFT     &kp DOWN   &kp RIGHT   &none      &kp BSLH          &kp AMPS      &kp LBRC         &kp RBRC        &kp CARET        &kp BSPC
+    &kp LSHFT    &none      &none       &none      &bl BL_DEC        &bl BL_TOG    &bl BL_INC       &none           &bootloader      &kp ENTER
+    &kp LCTRL               &kp LALT                                 &hm OUT_TOG SPACE              &tog SYM                         &tog UPPER
+            >;
+        };
+    };
+};
+`;
+
+/* ============================================================
+   Keycode registry
+   ============================================================ */
+const KC = [];
+function add(code,label,cat){ KC.push({code,label,cat}); }
+
+for(const c of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') add(c,c,'Letters');
+[['N1','1'],['N2','2'],['N3','3'],['N4','4'],['N5','5'],
+ ['N6','6'],['N7','7'],['N8','8'],['N9','9'],['N0','0']].forEach(([c,l])=>add(c,l,'Numbers'));
+
+[['EXCL','!'],['AT','@'],['HASH','#'],['DOLLAR','$'],['PERCENT','%'],['CARET','^'],
+ ['AMPS','&'],['ASTRK','*'],['STAR','*'],['LPAR','('],['RPAR',')'],
+ ['MINUS','-'],['UNDER','_'],['EQUAL','='],['PLUS','+'],
+ ['LBKT','['],['RBKT',']'],['LBRC','{'],['RBRC','}'],
+ ['BSLH','\\'],['PIPE','|'],['SEMI',';'],['COLON',':'],
+ ['APOS',"'"],['DQT','"'],['GRAVE','`'],['TILDE','~'],
+ ['COMMA',','],['DOT','.'],['LT','<'],['GT','>'],
+ ['FSLH','/'],['SLASH','/'],['QMARK','?']].forEach(([c,l])=>add(c,l,'Symbols'));
+
+[['LSHFT','LShift'],['RSHFT','RShift'],['LCTRL','LCtrl'],['RCTRL','RCtrl'],
+ ['LALT','LAlt'],['RALT','RAlt'],['LGUI','LGui'],['RGUI','RGui']].forEach(([c,l])=>add(c,l,'Modifiers'));
+
+[['ENTER','Enter'],['ESC','Esc'],['BSPC','Bksp'],['DEL','Del'],['TAB','Tab'],
+ ['SPACE','Space'],['CAPS','Caps'],['CLCK','Caps'],['INS','Ins'],
+ ['HOME','Home'],['END','End'],['PG_UP','PgUp'],['PG_DN','PgDn'],
+ ['UP','↑'],['DOWN','↓'],['LEFT','←'],['RIGHT','→'],
+ ['PSCRN','PrtSc'],['K_BACK','Back'],['K_APP','Menu']].forEach(([c,l])=>add(c,l,'Nav/Control'));
+
+for(let i=1;i<=24;i++) add('F'+i,'F'+i,'Function');
+
+[['KP_N0','KP 0'],['KP_N1','KP 1'],['KP_N2','KP 2'],['KP_N3','KP 3'],['KP_N4','KP 4'],
+ ['KP_N5','KP 5'],['KP_N6','KP 6'],['KP_N7','KP 7'],['KP_N8','KP 8'],['KP_N9','KP 9'],
+ ['KP_PLUS','KP +'],['KP_MINUS','KP -'],['KP_MULTIPLY','KP *'],['KP_DIVIDE','KP /'],
+ ['KP_DOT','KP .'],['KP_ENTER','KP ⏎'],['KP_EQUAL','KP =']].forEach(([c,l])=>add(c,l,'Keypad'));
+
+[['C_VOL_UP','Vol +'],['C_VOL_DN','Vol -'],['C_MUTE','Mute'],['C_PP','Play/Pause'],
+ ['C_NEXT','Next'],['C_PREV','Prev'],['C_STOP','Stop'],
+ ['C_BRI_UP','Bri +'],['C_BRI_DN','Bri -'],
+ ['C_AC_SEARCH','Search'],['C_AC_HOME','Home'],['C_AC_BACK','Back'],['C_AC_FORWARD','Fwd']
+].forEach(([c,l])=>add(c,l,'Media'));
+
+[['K_CUT','Cut'],['K_COPY','Copy'],['K_PASTE','Paste'],['K_UNDO','Undo'],['K_REDO','Redo']
+].forEach(([c,l])=>add(c,l,'Editing'));
+
+const KC_MAP = {};
+KC.forEach(k=>{ if(!(k.code in KC_MAP)) KC_MAP[k.code]=k.label; });
+function kcLabel(code){ return code!=null && (code in KC_MAP) ? KC_MAP[code] : (code||''); }
+
+/* Descriptions (for hover tooltips) */
+const DESC = {
+  ENTER:'Return / Enter', ESC:'Escape', BSPC:'Backspace', DEL:'Delete forward',
+  TAB:'Tab', SPACE:'Space bar', CAPS:'Caps Lock', CLCK:'Caps Lock', INS:'Insert',
+  HOME:'Home', END:'End', PG_UP:'Page Up', PG_DN:'Page Down',
+  UP:'Arrow Up', DOWN:'Arrow Down', LEFT:'Arrow Left', RIGHT:'Arrow Right',
+  PSCRN:'Print Screen', K_BACK:'Consumer Back (AC Back)', K_APP:'Application / Menu key',
+  LSHFT:'Left Shift', RSHFT:'Right Shift', LCTRL:'Left Control', RCTRL:'Right Control',
+  LALT:'Left Alt / Option', RALT:'Right Alt / AltGr', LGUI:'Left GUI (Win/Cmd)', RGUI:'Right GUI (Win/Cmd)',
+  C_VOL_UP:'Volume Up', C_VOL_DN:'Volume Down', C_MUTE:'Mute', C_PP:'Play / Pause',
+  C_NEXT:'Next Track', C_PREV:'Previous Track', C_STOP:'Stop',
+  C_BRI_UP:'Brightness Up', C_BRI_DN:'Brightness Down',
+  C_AC_SEARCH:'Search', C_AC_HOME:'Browser Home', C_AC_BACK:'Browser Back', C_AC_FORWARD:'Browser Forward',
+  K_CUT:'Cut', K_COPY:'Copy', K_PASTE:'Paste', K_UNDO:'Undo', K_REDO:'Redo',
+};
+const CATDESC = {
+  Letters:'Letter key', Numbers:'Number-row key', Symbols:'Symbol / punctuation',
+  Function:'Function key', Keypad:'Numeric keypad key', Modifiers:'Modifier key',
+  'Nav/Control':'Navigation / control key', Media:'Media / consumer control', Editing:'Editing shortcut',
+};
+function kcDesc(code){
+  if(code in DESC) return DESC[code];
+  const k = KC.find(x=>x.code===code);
+  if(k) return (CATDESC[k.cat]||'Keycode') + ' — sends "'+k.label+'"';
+  return 'Keycode '+code;
+}
+const BEHDESC = {
+  kp:'Key Press — sends a keycode', mt:'Mod-Tap — modifier when held, key when tapped',
+  lt:'Layer-Tap — activates a layer when held, key when tapped',
+  mo:'Momentary layer — active only while held', to:'Go to layer — switch to this layer',
+  tog:'Toggle layer — turn this layer on/off', bt:'Bluetooth control',
+  mkp:'Mouse button click', msc:'Mouse scroll', bl:'Backlight control',
+  out:'Output selection (USB / BLE)', ext_power:'External power control',
+  trans:'Transparent — falls through to a lower layer', none:'None — key does nothing on this layer',
+  sys_reset:'Reset the keyboard', bootloader:'Enter bootloader for flashing',
+  hm:'Custom hold-tap behavior', td0:'Custom tap-dance behavior',
+};
+function behDesc(bh){ return BEHDESC[bh] || ('Behavior &'+bh); }
+function bindingDesc(b){
+  const s = bindingToString(b);
+  return b.behavior==='kp' ? s+' — '+kcDesc(b.params[0]) : s+' — '+behDesc(b.behavior);
+}
+
+const CATEGORIES = ['Letters','Numbers','Symbols','Modifiers','Nav/Control','Function','Keypad','Media','Editing','Special'];
+const MODIFIERS = ['LSHFT','RSHFT','LCTRL','RCTRL','LALT','RALT','LGUI','RGUI'];
+
+/* Behavior descriptors */
+const BEH = {  /* behaviors that need a parameter picker */
+  mt:{name:'Mod-Tap (&mt)', params:[{t:'mod',label:'Hold (modifier)'},{t:'keycode',label:'Tap (key)'}]},
+  lt:{name:'Layer-Tap (&lt)', params:[{t:'layer',label:'Hold (layer)'},{t:'keycode',label:'Tap (key)'}]},
+  mo:{name:'Momentary layer (&mo)', params:[{t:'layer',label:'Layer'}]},
+  to:{name:'Go to layer (&to)', params:[{t:'layer',label:'Layer'}]},
+  tog:{name:'Toggle layer (&tog)', params:[{t:'layer',label:'Layer'}]},
+  bt:{name:'Bluetooth (&bt)', params:[{t:'enum',label:'Action',options:['BT_SEL 0','BT_SEL 1','BT_SEL 2','BT_SEL 3','BT_SEL 4','BT_CLR','BT_CLR_ALL','BT_NXT','BT_PRV']}]},
+  mkp:{name:'Mouse click (&mkp)', params:[{t:'enum',label:'Button',options:['LCLK','RCLK','MCLK','MB4','MB5']}]},
+  msc:{name:'Mouse scroll (&msc)', params:[{t:'enum',label:'Scroll',options:['SCRL_UP','SCRL_DOWN','SCRL_LEFT','SCRL_RIGHT']}]},
+  bl:{name:'Backlight (&bl)', params:[{t:'enum',label:'Action',options:['BL_TOG','BL_INC','BL_DEC','BL_ON','BL_OFF']}]},
+  out:{name:'Output (&out)', params:[{t:'enum',label:'Output',options:['OUT_TOG','OUT_USB','OUT_BLE']}]},
+  ext_power:{name:'External power (&ext_power)', params:[{t:'enum',label:'Action',options:['EP_TOG','EP_ON','EP_OFF']}]},
+};
+const BEH0 = {  /* zero-parameter behaviors — assign on click */
+  trans:{name:'Transparent ▽'},
+  none:{name:'None ✕'},
+  sys_reset:{name:'Reset'},
+  bootloader:{name:'Bootloader'},
+};
+
+/* ============================================================
+   Physical layout (bb9900) — 42 key positions
+   ============================================================ */
+const LAYOUT = [
+  [ {i:0,c:1,s:2}, {i:1,c:9,s:2} ],
+  [ {i:2,c:1,s:2},{i:3,c:3,s:2},{i:4,c:5,s:2},{i:5,c:7,s:2},{i:6,c:9,s:2} ],
+  [], [], [],
+  [ {i:37,c:1,s:2},{i:38,c:3,s:2},{i:39,c:5,s:2},{i:40,c:7,s:2},{i:41,c:9,s:2} ],
+];
+for(let k=0;k<10;k++){ LAYOUT[2].push({i:7+k, c:k+1, s:1}); }
+for(let k=0;k<10;k++){ LAYOUT[3].push({i:17+k, c:k+1, s:1}); }
+for(let k=0;k<10;k++){ LAYOUT[4].push({i:27+k, c:k+1, s:1}); }
+
+/* ============================================================
+   State
+   ============================================================ */
+let state = {
+  original: '',      // full original file text
+  layers: [],        // [{node, name, innerStart, innerEnd, bindings:[{behavior,params}]}]
+  defines: {},       // name -> number
+  numToDefine: {},   // number -> name
+  activeLayer: 0,
+  selKey: null,
+  activeCat: 'Letters',
+  search: '',
+  copyBuffer: null,
+};
+let dragSrc = null;
+
+/* ============================================================
+   Parser
+   ============================================================ */
+function parseKeymap(text){
+  const defines = {}, numToDefine = {};
+  const dre = /#define\s+(\w+)\s+(\d+)/g; let dm;
+  while((dm = dre.exec(text))){ defines[dm[1]] = +dm[2]; numToDefine[+dm[2]] = dm[1]; }
+
+  const layers = [];
+  const kmIdx = text.indexOf('"zmk,keymap"');
+  const scanFrom = kmIdx >= 0 ? kmIdx : 0;
+  // Layer nodes: `name { bindings = < ... >;` (bindings is the first child — this
+  // deliberately skips `behaviors` nodes, whose `bindings` are not the first child).
+  const re = /(\w+)\s*\{\s*bindings\s*=\s*<([\s\S]*?)>\s*;/g;
+  re.lastIndex = scanFrom;
+  let m;
+  while((m = re.exec(text))){
+    const node = m[1];
+    const inner = m[2];
+    const innerStart = m.index + m[0].indexOf('<') + 1;
+    const innerEnd = innerStart + inner.length;
+    const bindings = inner.split('&').slice(1).map(chunk=>{
+      const toks = chunk.trim().split(/\s+/).filter(Boolean);
+      return { behavior: toks[0]||'none', params: toks.slice(1) };
+    });
+    layers.push({ node, name: prettyLayer(node, layers.length, numToDefine), innerStart, innerEnd, bindings });
+  }
+  return { original: text, layers, defines, numToDefine };
+}
+
+function prettyLayer(node, idx, numToDefine){
+  if(numToDefine[idx]) return cap(numToDefine[idx].toLowerCase());
+  let n = node.replace(/_?layer$/i,'').replace(/_/g,' ').trim();
+  return n ? cap(n) : ('Layer '+idx);
+}
+function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+
+/* Value a layer parameter should take in the file: prefer the #define name. */
+function layerParamValue(idx){
+  return state.numToDefine[idx] || String(idx);
+}
+/* Human name for a layer parameter token (number or define name). */
+function layerName(token){
+  if(token == null) return '';
+  if(/^\d+$/.test(token)){ const n=+token; return state.numToDefine[n] || ('L'+n); }
+  return token;
+}
+
+/* ============================================================
+   Binding → keycap label
+   ============================================================ */
+function capLabel(b){
+  const bh=b.behavior, p=b.params||[];
+  switch(bh){
+    case 'kp':  return {main:kcLabel(p[0]), sub:''};
+    case 'mt':  return {main:kcLabel(p[1]), sub:kcLabel(p[0])};
+    case 'lt':  return {main:kcLabel(p[1]), sub:layerName(p[0])};
+    case 'mo':  return {main:layerName(p[0]), sub:'MO'};
+    case 'to':  return {main:layerName(p[0]), sub:'TO'};
+    case 'tog': return {main:layerName(p[0]), sub:'TOG'};
+    case 'bt':  return {main:p.join(' ').replace('BT_SEL ','BT').replace('BT_','BT '), sub:'BT'};
+    case 'mkp': return {main:p[0]||'', sub:'MB'};
+    case 'msc': return {main:(p[0]||'').replace('SCRL_',''), sub:'SCR'};
+    case 'bl':  return {main:(p[0]||'').replace('BL_',''), sub:'BL'};
+    case 'out': return {main:(p[0]||'').replace('OUT_',''), sub:'OUT'};
+    case 'ext_power': return {main:(p[0]||'').replace('EP_',''), sub:'PWR'};
+    case 'trans': return {main:'▽', sub:''};
+    case 'none':  return {main:'✕', sub:''};
+    case 'sys_reset': return {main:'RESET', sub:''};
+    case 'bootloader': return {main:'BOOT', sub:''};
+    default: return {main:(p.length?kcLabel(p[p.length-1]):bh), sub:'&'+bh};
+  }
+}
+function bindingToString(b){
+  return '&'+b.behavior + ((b.params&&b.params.length)? ' '+b.params.join(' ') : '');
+}
+
+/* ============================================================
+   Rendering
+   ============================================================ */
+const $ = id => document.getElementById(id);
+
+function renderLayerTabs(){
+  const el = $('layertabs'); el.innerHTML='';
+  state.layers.forEach((L,idx)=>{
+    const t = document.createElement('div');
+    t.className = 'layertab'+(idx===state.activeLayer?' active':'');
+    t.textContent = L.name+' ('+idx+')';
+    t.onclick = ()=>{ state.activeLayer=idx; state.selKey=null; renderAll(); };
+    el.appendChild(t);
+  });
+}
+
+function renderBoard(){
+  const board = $('board'); board.innerHTML='';
+  const L = state.layers[state.activeLayer];
+  if(!L) return;
+  LAYOUT.forEach((row,r)=>{
+    row.forEach(pos=>{
+      const b = L.bindings[pos.i];
+      const cap = document.createElement('div');
+      cap.className = 'cap'+(state.selKey===pos.i?' sel':'');
+      cap.style.gridColumn = pos.c+' / span '+pos.s;
+      cap.style.gridRow = (r+1);
+      const lab = b ? capLabel(b) : {main:'—',sub:''};
+      cap.innerHTML =
+        (lab.sub?'<span class="sub">'+esc(lab.sub)+'</span>':'') +
+        '<span class="main">'+esc(lab.main||'')+'</span>' +
+        '<span class="idx">'+pos.i+'</span>';
+      cap.title = b ? (bindingDesc(b)+'\n(drag onto another key to swap)') : '';
+      cap.onclick = ()=>{ state.selKey=pos.i; renderAll(); };
+      // Drag-and-drop to swap
+      cap.draggable = true;
+      cap.ondragstart = (e)=>{ dragSrc = pos.i; cap.classList.add('dragging');
+        e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain', String(pos.i)); };
+      cap.ondragend = ()=>{ cap.classList.remove('dragging'); };
+      cap.ondragover = (e)=>{ e.preventDefault(); e.dataTransfer.dropEffect='move';
+        if(dragSrc!==pos.i) cap.classList.add('dragover'); };
+      cap.ondragleave = ()=>{ cap.classList.remove('dragover'); };
+      cap.ondrop = (e)=>{ e.preventDefault(); cap.classList.remove('dragover');
+        const from = dragSrc!=null ? dragSrc : parseInt(e.dataTransfer.getData('text/plain'),10);
+        if(from==null || isNaN(from) || from===pos.i) return;
+        requestSwap(from, pos.i); };
+      board.appendChild(cap);
+    });
+  });
+}
+
+function renderDetail(){
+  const L = state.layers[state.activeLayer];
+  $('bufInfo').innerHTML = state.copyBuffer
+    ? 'Clipboard: <code>'+esc(bindingToString(state.copyBuffer))+'</code>' : '';
+  if(state.selKey==null || !L){
+    $('selInfo').textContent = 'none — click a key';
+    $('selBinding').textContent = '—';
+    $('rawInput').value = '';
+    return;
+  }
+  const b = L.bindings[state.selKey];
+  $('selInfo').textContent = L.name+' · position '+state.selKey;
+  const str = bindingToString(b);
+  $('selBinding').textContent = str;
+  $('rawInput').value = str;
+}
+
+function renderCatTabs(){
+  const el = $('cattabs'); el.innerHTML='';
+  CATEGORIES.forEach(cat=>{
+    const t = document.createElement('div');
+    t.className='cattab'+(cat===state.activeCat?' active':'');
+    t.textContent=cat;
+    t.onclick=()=>{ state.activeCat=cat; renderPalette(); };
+    el.appendChild(t);
+  });
+}
+
+function keycodeTile(k){
+  const pk=document.createElement('div');
+  pk.className='pk';
+  pk.innerHTML='<span>'+esc(k.label)+'</span><span class="code">'+esc(k.code)+'</span>';
+  pk.title = k.label+' ('+k.code+')\n'+kcDesc(k.code);
+  pk.onclick=()=>assign({behavior:'kp', params:[k.code]});
+  return pk;
+}
+function behTile(bh, desc, hasParams){
+  const pk=document.createElement('div');
+  pk.className='pk beh';
+  pk.innerHTML='<span>'+esc(desc.name)+'</span>';
+  pk.title = desc.name+'\n'+behDesc(bh)+(hasParams?'\n(opens a parameter picker)':'');
+  pk.onclick = hasParams ? ()=>openBehaviorModal(bh) : ()=>assign({behavior:bh, params:[]});
+  return pk;
+}
+function matchBeh(bh, desc, q){
+  return bh.toLowerCase().includes(q) ||
+         (desc.name||'').toLowerCase().includes(q) ||
+         behDesc(bh).toLowerCase().includes(q);
+}
+function renderPalette(){
+  renderCatTabs();
+  const grid = $('palgrid'); grid.innerHTML='';
+  const q = state.search.trim().toLowerCase();
+
+  if(q){  // search across every category + behaviors
+    KC.filter(k=> k.code.toLowerCase().includes(q) || k.label.toLowerCase().includes(q) ||
+                  k.cat.toLowerCase().includes(q) || kcDesc(k.code).toLowerCase().includes(q))
+      .forEach(k=> grid.appendChild(keycodeTile(k)));
+    Object.keys(BEH0).forEach(bh=>{ if(matchBeh(bh,BEH0[bh],q)) grid.appendChild(behTile(bh,BEH0[bh],false)); });
+    Object.keys(BEH).forEach(bh=>{ if(matchBeh(bh,BEH[bh],q)) grid.appendChild(behTile(bh,BEH[bh],true)); });
+    if(!grid.children.length){
+      const e=document.createElement('div'); e.className='palempty';
+      e.textContent='No keys or functions match "'+state.search+'"';
+      grid.appendChild(e);
+    }
+    return;
+  }
+
+  if(state.activeCat==='Special'){
+    Object.keys(BEH0).forEach(bh=> grid.appendChild(behTile(bh,BEH0[bh],false)) );
+    Object.keys(BEH).forEach(bh=> grid.appendChild(behTile(bh,BEH[bh],true)) );
+    return;
+  }
+  KC.filter(k=>k.cat===state.activeCat).forEach(k=> grid.appendChild(keycodeTile(k)) );
+}
+
+function renderExport(){
+  $('exportArea').value = serializeKeymap();
+}
+
+function renderAll(){
+  renderLayerTabs();
+  renderBoard();
+  renderDetail();
+  renderPalette();
+  renderExport();
+}
+
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ============================================================
+   Assignment
+   ============================================================ */
+function assign(binding){
+  const L = state.layers[state.activeLayer];
+  if(!L){ toast('Load a keymap first'); return; }
+  if(state.selKey==null){ toast('Select a key on the board first'); return; }
+  L.bindings[state.selKey] = binding;
+  renderAll();
+}
+
+/* Raw binding text box (power-user / custom behaviors like &hm, &td0) */
+$('rawApply').onclick = ()=>{
+  if(state.selKey==null){ toast('Select a key first'); return; }
+  let v = $('rawInput').value.trim();
+  if(!v.startsWith('&')){ toast('Binding must start with &'); return; }
+  const toks = v.slice(1).trim().split(/\s+/).filter(Boolean);
+  assign({behavior:toks[0]||'none', params:toks.slice(1)});
+};
+
+/* ---- Generic confirm dialog ---- */
+let confirmCb = null;
+function confirmDialog(title, bodyHtml, cb){
+  $('confirmTitle').textContent = title;
+  $('confirmBody').innerHTML = bodyHtml;
+  confirmCb = cb;
+  $('confirmBg').classList.add('show');
+}
+$('confirmCancel').onclick = ()=>{ $('confirmBg').classList.remove('show'); confirmCb=null; };
+$('confirmOk').onclick = ()=>{ const cb=confirmCb; $('confirmBg').classList.remove('show'); confirmCb=null; if(cb) cb(); };
+
+/* ---- Drag-and-drop swap (with confirmation) ---- */
+function requestSwap(from, to){
+  const L = state.layers[state.activeLayer];
+  if(!L) return;
+  const a = L.bindings[from], b = L.bindings[to];
+  confirmDialog('Swap keys?',
+    'Position <b>'+from+'</b> <code>'+esc(bindingToString(a))+'</code>'+
+    ' &nbsp;⇄&nbsp; position <b>'+to+'</b> <code>'+esc(bindingToString(b))+'</code>'+
+    '<br><br>This overwrites both positions with each other’s binding.',
+    ()=>{ L.bindings[from]=b; L.bindings[to]=a; state.selKey=to; renderAll();
+          toast('Swapped positions '+from+' and '+to); });
+}
+
+/* ---- Copy / paste a key's binding ---- */
+$('copyKeyBtn').onclick = ()=>{
+  if(state.selKey==null){ toast('Select a key first'); return; }
+  const b = state.layers[state.activeLayer].bindings[state.selKey];
+  state.copyBuffer = { behavior:b.behavior, params:[...b.params] };
+  renderDetail();
+  toast('Copied '+bindingToString(b));
+};
+$('pasteKeyBtn').onclick = ()=>{
+  if(state.selKey==null){ toast('Select a key first'); return; }
+  if(!state.copyBuffer){ toast('Nothing copied yet — use "Copy key" first'); return; }
+  assign({ behavior:state.copyBuffer.behavior, params:[...state.copyBuffer.params] });
+  toast('Pasted '+bindingToString(state.copyBuffer));
+};
+
+/* ---- Palette search + quick actions ---- */
+$('searchInput').oninput = (e)=>{
+  state.search = e.target.value;
+  $('searchClear').classList.toggle('show', !!state.search);
+  renderPalette();
+};
+$('searchClear').onclick = ()=>{
+  state.search=''; $('searchInput').value=''; $('searchClear').classList.remove('show'); renderPalette();
+};
+$('quickNone').onclick  = ()=> assign({behavior:'none',  params:[]});
+$('quickTrans').onclick = ()=> assign({behavior:'trans', params:[]});
+
+/* ============================================================
+   Behavior parameter modal
+   ============================================================ */
+let modalCtx = null;
+function openBehaviorModal(bh){
+  if(state.selKey==null){ toast('Select a key on the board first'); return; }
+  const desc = BEH[bh];
+  modalCtx = { bh, desc };
+  $('modalTitle').textContent = desc.name;
+  const fields = $('modalFields'); fields.innerHTML='';
+  desc.params.forEach((p,pi)=>{
+    const wrap=document.createElement('div'); wrap.className='field';
+    const lab=document.createElement('label'); lab.textContent=p.label; wrap.appendChild(lab);
+    const sel=document.createElement('select'); sel.dataset.pi=pi;
+    let opts=[];
+    if(p.t==='mod') opts = MODIFIERS.map(m=>[m, kcLabel(m)+' ('+m+')']);
+    else if(p.t==='layer') opts = state.layers.map((L,i)=>[layerParamValue(i), L.name+' ('+i+')']);
+    else if(p.t==='enum') opts = p.options.map(o=>[o,o]);
+    else if(p.t==='keycode'){
+      // grouped select
+      CATEGORIES.filter(c=>c!=='Special').forEach(cat=>{
+        const og=document.createElement('optgroup'); og.label=cat;
+        KC.filter(k=>k.cat===cat).forEach(k=>{
+          const o=document.createElement('option'); o.value=k.code; o.textContent=k.label+' — '+k.code; og.appendChild(o);
+        });
+        sel.appendChild(og);
+      });
+    }
+    opts.forEach(([v,t])=>{ const o=document.createElement('option'); o.value=v; o.textContent=t; sel.appendChild(o); });
+    wrap.appendChild(sel); fields.appendChild(wrap);
+  });
+  $('modalBg').classList.add('show');
+}
+$('modalCancel').onclick=()=>{ $('modalBg').classList.remove('show'); modalCtx=null; };
+$('modalApply').onclick=()=>{
+  if(!modalCtx) return;
+  const sels=[...$('modalFields').querySelectorAll('select')];
+  let params=[];
+  sels.forEach(s=>{ // enum values may contain a space (e.g. "BT_SEL 0")
+    s.value.split(/\s+/).filter(Boolean).forEach(tok=>params.push(tok));
+  });
+  assign({behavior:modalCtx.bh, params});
+  $('modalBg').classList.remove('show'); modalCtx=null;
+};
+
+/* ============================================================
+   Serialize (lossless round-trip: replace only bindings blocks)
+   ============================================================ */
+function serializeKeymap(){
+  if(!state.original) return '';
+  const sorted = [...state.layers].sort((a,b)=>a.innerStart-b.innerStart);
+  let out='', cursor=0;
+  for(const L of sorted){
+    out += state.original.slice(cursor, L.innerStart);
+    out += formatBindings(L);
+    cursor = L.innerEnd;
+  }
+  out += state.original.slice(cursor);
+  return out;
+}
+/* Reproduce the multi-row visual layout of the source for readability. */
+const ROW_GROUPS = [[0,1],[2,3,4,5,6],
+  [7,8,9,10,11,12,13,14,15,16],
+  [17,18,19,20,21,22,23,24,25,26],
+  [27,28,29,30,31,32,33,34,35,36],
+  [37,38,39,40,41]];
+function formatBindings(L){
+  const cells = L.bindings.map(bindingToString);
+  let lines = ['']; // leading newline after `<`
+  ROW_GROUPS.forEach(group=>{
+    const row = group.filter(i=>i<cells.length).map(i=>cells[i]).join('   ');
+    lines.push('                ' + row);
+  });
+  lines.push('            '); // indentation before closing `>`
+  return lines.join('\n');
+}
+
+/* ============================================================
+   Load / import / export actions
+   ============================================================ */
+function loadText(text){
+  try{
+    const parsed = parseKeymap(text);
+    if(!parsed.layers.length){ toast('No layers found — is this a ZMK keymap?'); return; }
+    state.original = parsed.original;
+    state.layers = parsed.layers;
+    state.defines = parsed.defines;
+    state.numToDefine = parsed.numToDefine;
+    state.activeLayer = 0;
+    state.selKey = null;
+    renderAll();
+    toast('Loaded '+parsed.layers.length+' layer(s)');
+  }catch(e){
+    console.error(e);
+    toast('Failed to parse keymap');
+  }
+}
+
+$('reloadDefault').onclick = ()=>{ $('importArea').value=''; loadText(DEFAULT_KEYMAP); };
+$('loadPasteBtn').onclick = ()=>{
+  const t=$('importArea').value.trim();
+  if(!t){ toast('Paste some keymap text first'); return; }
+  loadText(t);
+};
+$('fileInput').onchange = (e)=>{
+  const f=e.target.files[0]; if(!f) return;
+  const rdr=new FileReader();
+  rdr.onload=()=>{ $('importArea').value=rdr.result; loadText(rdr.result); };
+  rdr.readAsText(f);
+};
+$('downloadBtn').onclick = ()=>{
+  const blob=new Blob([serializeKeymap()],{type:'text/plain'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='bb9900.keymap';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(a.href);
+};
+$('copyBtn').onclick = async ()=>{
+  try{ await navigator.clipboard.writeText(serializeKeymap()); toast('Copied to clipboard'); }
+  catch{ $('exportArea').select(); document.execCommand('copy'); toast('Copied'); }
+};
+
+/* toast */
+let toastTimer=null;
+function toast(msg){
+  const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),1800);
+}
+
+/* boot */
+loadText(DEFAULT_KEYMAP);
+</script>
+</body>
+</html>
